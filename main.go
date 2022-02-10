@@ -299,6 +299,16 @@ func main() {
 
 	})
 
-	app.Listen(":3000")
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	err := app.Listen(":" + port)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }
