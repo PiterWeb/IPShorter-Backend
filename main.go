@@ -42,10 +42,12 @@ type user struct {
 
 func ConnectDB() *mongo.Client {
 
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
+	godotenv.Load()
+
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	panic(err)
+	// }
 	
 	var dbUser string = os.Getenv("MONGO_USER")
 	var dbPass string = os.Getenv("MONGO_PSW")
