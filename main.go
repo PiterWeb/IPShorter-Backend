@@ -22,7 +22,7 @@ var loggerColl = client.Database("databases").Collection("loggers")
 var userColl = client.Database("databases").Collection("users")
 
 type visitor struct {
-	IPs      []string
+	IPs      string
 	Clicked time.Time
 }
 
@@ -255,7 +255,7 @@ func main() {
 		logger.Clicks++
 		loggerColl.UpdateOne(ctx, bson.M{"id": id}, bson.M{"$set": bson.M{"clicks": logger.Clicks}})
 
-		userIP := c.IPs()
+		userIP := c.IPs()[0]
 
 		visitor := visitor{
 			IPs:      userIP,
