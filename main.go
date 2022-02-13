@@ -29,7 +29,6 @@ type visitor struct {
 type logger struct {
 	Id        string
 	Url       string
-	Dashboard string
 	ApiKey    string
 	Visitors  []visitor
 	Clicks    int
@@ -43,11 +42,6 @@ type user struct {
 func ConnectDB() *mongo.Client {
 
 	godotenv.Load()
-
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	panic(err)
-	// }
 	
 	var dbUser string = os.Getenv("MONGO_USER")
 	var dbPass string = os.Getenv("MONGO_PSW")
@@ -153,6 +147,10 @@ func main() {
 			m.SetHeader("Subject", "ApiKey | IPShorter")
 			m.SetBody("text/html", "This is your ApiKey <b>"+apiKey+"</b>")
 
+			if err := d.DialAndSend(m); err != nil {
+				panic(err)
+			}
+
 			return c.Status(400).JSON(&fiber.Map{"error": "User already have an apiKey , but we resent it to you by email"})
 		}
 
@@ -183,7 +181,9 @@ func main() {
 			return c.Status(400).JSON(&fiber.Map{"error": "url is required"})
 		} else if exLogger, _ := findLoggerByUrl(url); exLogger != nil {
 
-			return c.Status(400).JSON(&fiber.Map{"error": "url is already in use"})
+			if (exLogger.ApiKey == apiKey) {
+				return c.Status(400).JSON(&exLogger)
+			}	
 
 		}
 
@@ -191,18 +191,10 @@ func main() {
 			return c.Status(400).JSON(&fiber.Map{"error": "apiKey does not exist", "apiKey": apiKey})
 		}
 
-		idDashboard := uuid.New().String()
 		idLogger := uuid.New().String()
-
-		type response struct {
-			Id        string
-			Url       string
-			Dashboard string
-		}
 
 		urlLogger := &logger{
 			Id:        idLogger,
-			Dashboard: idDashboard,
 			Url:       url,
 			ApiKey:    apiKey,
 		}
@@ -211,10 +203,14 @@ func main() {
 			return c.Status(400).JSON(&fiber.Map{"error": "error creating logger"})
 		}
 
+		type response struct {
+			Id        string
+			Url       string
+		}
+
 		res := &response{
 			Id:        idLogger,
 			Url:       url,
-			Dashboard: idDashboard,
 		}
 
 		return c.JSON(res)
@@ -279,22 +275,14 @@ func main() {
 		apiKey := c.Params("apiKey")
 		id := c.Params("id")
 
-		cur, err := loggerColl.Find(ctx, bson.M{"apikey": apiKey})
+		logger , err := findLoggerById(id)
 
 		if err != nil {
 			return c.Status(400).JSON(&fiber.Map{"error": "error getting loggers"})
 		}
 
-		for cur.Next(ctx) {
-			var logger logger
-			err := cur.Decode(&logger)
-			if err != nil {
-				return c.Status(400).JSON(&fiber.Map{"error": "error getting loggers"})
-			}
-
-			if logger.Id == id {
-				return c.JSON(logger)
-			}
+		if logger.ApiKey == apiKey {
+			return c.JSON(logger)
 		}
 
 		return c.Status(400).JSON(&fiber.Map{"error": "error getting loggers"})
