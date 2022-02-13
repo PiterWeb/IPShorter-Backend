@@ -46,7 +46,7 @@ func ConnectDB() *mongo.Client {
 	if err != nil {
 		panic(err)
 	}
-
+	
 	var dbUser string = os.Getenv("MONGO_USER")
 	var dbPass string = os.Getenv("MONGO_PSW")
 	var dbDm string = os.Getenv("MONGO_DM")
