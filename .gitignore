@@ -1,2 +1,4 @@
 /.http
 /.env
+/tmp
+/.air.toml
